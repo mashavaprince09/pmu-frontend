@@ -1,0 +1,146 @@
+.waveform-panel {
+  padding: 0 1rem 1rem;
+  color: #e2e8f0;
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+
+    h2 {
+      font-size: 0.95rem;
+      color: #94a3b8;
+      margin: 0;
+    }
+  }
+
+  .controls {
+    display: flex;
+    gap: 1rem;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+
+    select {
+      padding: 0.25rem 0.4rem;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .zoom-btns {
+      align-self: flex-end;
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .reset-zoom-btn,
+    .zoom-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      background: transparent;
+      color: #e2e8f0;
+      font-size: 0.8rem;
+      cursor: pointer;
+
+      &:hover {
+        background: #334155;
+      }
+    }
+
+    .zoom-btn {
+      padding: 0.3rem 0.6rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+  }
+
+  .status {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+
+    &.error {
+      color: #f87171;
+    }
+
+    &.muted {
+      color: #64748b;
+      font-size: 0.75rem;
+    }
+
+    &.hint {
+      color: #64748b;
+      font-size: 0.7rem;
+    }
+  }
+
+  .charts {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .waveform-stack {
+    flex: 2;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .chart-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .chart-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .chart-label {
+      font-size: 0.7rem;
+      color: #64748b;
+    }
+
+    .channel-toggles {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .channel-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.7rem;
+      color: var(--ch-color);
+      cursor: pointer;
+      user-select: none;
+
+      input[type='checkbox'] {
+        accent-color: var(--ch-color);
+        cursor: pointer;
+        margin: 0;
+      }
+    }
+  }
+
+  .chart {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: crosshair;
+  }
+}

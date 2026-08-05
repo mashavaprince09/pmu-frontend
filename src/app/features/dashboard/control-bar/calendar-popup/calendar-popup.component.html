@@ -1,0 +1,45 @@
+<div class="calendar-popup">
+  <button type="button" class="trigger" (click)="toggle()">
+    {{ selected() ?? 'Select date' }}
+    <span class="chevron">▾</span>
+  </button>
+
+  @if (open()) {
+    <div class="panel">
+      <div class="panel-header">
+        <button type="button" class="nav" (click)="prevMonth()">‹</button>
+        <span class="month-label">{{ monthLabel() }}</span>
+        <button type="button" class="nav" (click)="nextMonth()">›</button>
+      </div>
+
+      <div class="weekdays">
+        @for (w of weekdayLabels; track $index) {
+          <span>{{ w }}</span>
+        }
+      </div>
+
+      <div class="grid">
+        @for (cell of cells(); track cell.date) {
+          <button
+            type="button"
+            class="cell"
+            [class.in-month]="cell.inMonth"
+            [class.available]="cell.available"
+            [class.complete]="cell.complete"
+            [class.selected]="cell.date === selected()"
+            [disabled]="!cell.available"
+            [title]="cellTitle(cell)"
+            (click)="pick(cell)"
+          >
+            {{ cell.dayOfMonth }}
+          </button>
+        }
+      </div>
+
+      <div class="legend">
+        <span class="swatch complete"></span> complete
+        <span class="swatch partial"></span> partial
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,26 @@
+<div class="trend-panel">
+  @if (loading()) {
+    <p class="status">Loading metrics…</p>
+  }
+  @if (errorMessage()) {
+    <p class="status error">{{ errorMessage() }}</p>
+  }
+  @if (empty() && !loading() && !errorMessage()) {
+    <p class="status">Select a device and date to view trends.</p>
+  }
+
+  @if (!loading() && !errorMessage() && !empty()) {
+    <div class="chart-toolbar">
+      <span class="hint">Drag to zoom · +/− to zoom in/out · double-click to reset · zoom is linked across all three charts</span>
+      <div class="zoom-btns">
+        <button type="button" class="zoom-btn" (click)="zoomIn()" title="Zoom in">+</button>
+        <button type="button" class="zoom-btn" (click)="zoomOut()" title="Zoom out">−</button>
+        <button type="button" class="reset-zoom-btn" (click)="resetZoom()">Reset zoom</button>
+      </div>
+    </div>
+  }
+
+  <div class="chart" #rmsChart></div>
+  <div class="chart" #freqChart></div>
+  <div class="chart" #rocofChart></div>
+</div>

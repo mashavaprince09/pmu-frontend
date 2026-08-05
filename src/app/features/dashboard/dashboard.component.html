@@ -1,0 +1,7 @@
+<div class="dashboard">
+  <app-control-bar></app-control-bar>
+  <app-trend-panel></app-trend-panel>
+  @if (store.selectedTimestamp() !== null) {
+    <app-waveform-chart></app-waveform-chart>
+  }
+</div>

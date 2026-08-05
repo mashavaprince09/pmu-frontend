@@ -1,0 +1,94 @@
+<div class="admin-page">
+  <header>
+    <h1>Admin</h1>
+    <a routerLink="/dashboard">Back to dashboard</a>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  <section>
+    <h2>Users</h2>
+    <table>
+      <thead>
+        <tr><th>Username</th><th>Role</th><th>Enabled</th><th>Devices</th></tr>
+      </thead>
+      <tbody>
+        @for (u of users(); track u.id) {
+          <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.role }}</td>
+            <td>{{ u.enabled ? 'Yes' : 'No' }}</td>
+            <td>
+              @for (d of u.devices; track d) {
+                <span class="chip">
+                  {{ d }}
+                  @if (deviceRegistryIdFor(d)) {
+                    <button (click)="revoke(u.id, deviceRegistryIdFor(d)!)">&times;</button>
+                  }
+                </span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <form class="inline-form" (ngSubmit)="createUser()">
+      <input name="newUsername" placeholder="username" [(ngModel)]="newUsername" required />
+      <input name="newPassword" type="password" placeholder="password" [(ngModel)]="newPassword" required />
+      <select name="newRole" [(ngModel)]="newRole">
+        <option value="VIEWER">VIEWER</option>
+        <option value="ADMIN">ADMIN</option>
+      </select>
+      <button type="submit">Add user</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Devices</h2>
+    <table>
+      <thead>
+        <tr><th>Device ID</th><th>Display name</th><th>Location</th></tr>
+      </thead>
+      <tbody>
+        @for (d of devices(); track d.id) {
+          <tr>
+            <td>{{ d.deviceId }}</td>
+            <td>{{ d.displayName }}</td>
+            <td>{{ d.location }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <form class="inline-form" (ngSubmit)="createDevice()">
+      <input name="newDeviceId" placeholder="deviceId (e.g. pmu11)" [(ngModel)]="newDeviceId" required />
+      <input name="newDeviceName" placeholder="display name" [(ngModel)]="newDeviceName" />
+      <input name="newDeviceLocation" placeholder="location" [(ngModel)]="newDeviceLocation" />
+      <button type="submit">Add device</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Access</h2>
+    <form class="inline-form" (ngSubmit)="grant()">
+      <select name="grantUserId" [(ngModel)]="grantUserId">
+        <option [ngValue]="null" disabled>Select user</option>
+        @for (u of users(); track u.id) {
+          <option [ngValue]="u.id">{{ u.username }}</option>
+        }
+      </select>
+      <select name="grantDeviceRegistryId" [(ngModel)]="grantDeviceRegistryId">
+        <option [ngValue]="null" disabled>Select device</option>
+        @for (d of devices(); track d.id) {
+          <option [ngValue]="d.id">{{ d.deviceId }}</option>
+        }
+      </select>
+      <button type="submit">Grant</button>
+    </form>
+  </section>
+
+  <p class="note">Reset-password, disable/delete user, device edit/rotate-token, and audit log are not yet backed — coming soon.</p>
+</div>

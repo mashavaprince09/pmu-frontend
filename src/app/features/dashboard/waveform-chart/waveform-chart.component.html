@@ -1,0 +1,85 @@
+<div class="waveform-panel">
+  <div class="header">
+    <h2>Waveform</h2>
+
+    <div class="controls">
+      <label>
+        Window
+        <select [ngModel]="windowSeconds()" (ngModelChange)="onWindowChange($event)">
+          @for (w of windowOptions; track w) {
+            <option [value]="w">{{ w }}s</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Nominal freq
+        <select [ngModel]="fundamentalHz()" (ngModelChange)="onFundamentalChange($event)">
+          <option [value]="50">50 Hz</option>
+          <option [value]="60">60 Hz</option>
+        </select>
+      </label>
+
+      <div class="zoom-btns">
+        <button type="button" class="zoom-btn" (click)="zoomIn()" title="Zoom in">+</button>
+        <button type="button" class="zoom-btn" (click)="zoomOut()" title="Zoom out">−</button>
+        <button type="button" class="reset-zoom-btn" (click)="resetZoom()">Reset zoom</button>
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="status">Loading waveform…</p>
+  }
+  @if (errorMessage()) {
+    <p class="status error">{{ errorMessage() }}</p>
+  }
+  @if (waveformInfo() && !loading() && !errorMessage()) {
+    <p class="status muted">{{ waveformInfo() }}</p>
+  }
+  @if (!loading() && !errorMessage()) {
+    <p class="status hint">Drag to zoom · +/− to zoom in/out · double-click to reset · zoom is linked between the two charts</p>
+  }
+
+  <div class="charts">
+    <div class="waveform-stack">
+      <div class="chart-col">
+        <div class="chart-col-header">
+          <span class="chart-label">Voltage (V)</span>
+          <div class="channel-toggles">
+            @for (ch of voltageChannels; track ch) {
+              <label class="channel-toggle" [style.--ch-color]="channelColors[ch]">
+                <input
+                  type="checkbox"
+                  [checked]="enabledChannels().has(ch)"
+                  (change)="toggleChannel(ch)"
+                />
+                {{ ch }}
+              </label>
+            }
+          </div>
+        </div>
+        <div class="chart" #voltageChart></div>
+      </div>
+      <div class="chart-col">
+        <div class="chart-col-header">
+          <span class="chart-label">Current (A)</span>
+          <div class="channel-toggles">
+            @for (ch of currentChannels; track ch) {
+              <label class="channel-toggle" [style.--ch-color]="channelColors[ch]">
+                <input
+                  type="checkbox"
+                  [checked]="enabledChannels().has(ch)"
+                  (change)="toggleChannel(ch)"
+                />
+                {{ ch }}
+              </label>
+            }
+          </div>
+        </div>
+        <div class="chart" #currentChart></div>
+      </div>
+    </div>
+    <app-phasor-diagram [phasors]="phasors()"></app-phasor-diagram>
+  </div>
+</div>

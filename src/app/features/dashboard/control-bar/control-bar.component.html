@@ -1,0 +1,84 @@
+<div class="control-bar">
+  <div class="field">
+    <label>Mode</label>
+    <div class="mode-toggle">
+      <button [class.active]="mode() === 'single'" (click)="onModeChange('single')">Single</button>
+      <button [class.active]="mode() === 'compare'" (click)="onModeChange('compare')">Compare</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="primary-device">Device</label>
+    <select id="primary-device" [ngModel]="primaryDevice()" (ngModelChange)="onPrimaryDeviceChange($event)">
+      <option value="" disabled>Select device</option>
+      @for (d of allDevices(); track d.deviceId) {
+        <option [value]="d.deviceId">{{ d.deviceId }} ({{ d.windows }} windows)</option>
+      }
+    </select>
+  </div>
+
+  @if (mode() === 'compare') {
+    <div class="field">
+      <label for="compare-device">Compare with</label>
+      <select id="compare-device" [ngModel]="compareDevice()" (ngModelChange)="onCompareDeviceChange($event)">
+        <option value="">None</option>
+        @for (d of allDevices(); track d.deviceId) {
+          @if (d.deviceId !== primaryDevice()) {
+            <option [value]="d.deviceId">{{ d.deviceId }}</option>
+          }
+        }
+      </select>
+    </div>
+  }
+
+  <div class="field">
+    <label for="date">Date</label>
+    <app-calendar-popup [days]="days()" [selected]="date()" (dateSelected)="onDateChange($event)"></app-calendar-popup>
+    @if (loadingDays()) {
+      <span class="hint">Loading availability…</span>
+    }
+  </div>
+
+  <div class="field">
+    <label for="hour">Hour</label>
+    <select id="hour" [ngModel]="hour()" (ngModelChange)="onHourChange($event)" [disabled]="!date()">
+      <option [value]="null">Full day</option>
+      @for (h of hours(); track h.hourEpoch) {
+        <option [value]="h.hourEpoch">{{ formatHour(h.hourEpoch) }} ({{ h.windows }})</option>
+      }
+    </select>
+  </div>
+
+  @if (hour() !== null) {
+    <div class="field">
+      <label for="duration">Window</label>
+      <select id="duration" [ngModel]="durationSeconds()" (ngModelChange)="onDurationChange($event)">
+        <option [value]="3600">1 hour</option>
+        <option [value]="21600">6 hours</option>
+        <option [value]="86400">24 hours</option>
+      </select>
+    </div>
+  }
+
+  @if (canDisplay()) {
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="display-btn" (click)="display()">Display</button>
+    </div>
+  }
+
+  <div class="spacer"></div>
+
+  <div class="field user-info">
+    <span class="username">{{ auth.me()?.username }}</span>
+    <span class="role-badge">{{ auth.role() }}</span>
+    @if (auth.isAdmin()) {
+      <a class="admin-link" routerLink="/admin">Admin</a>
+    }
+    <button class="logout" (click)="auth.logout()">Log out</button>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+</div>

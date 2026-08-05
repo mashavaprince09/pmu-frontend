@@ -1,0 +1,94 @@
+.admin-page {
+  min-height: 100vh;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 1.5rem;
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+
+    a {
+      color: #38bdf8;
+    }
+  }
+
+  section {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    margin-top: 0;
+    font-size: 1rem;
+    color: #94a3b8;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+
+    th, td {
+      text-align: left;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid #334155;
+      font-size: 0.85rem;
+    }
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #334155;
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    margin: 0.1rem;
+    font-size: 0.75rem;
+
+    button {
+      border: none;
+      background: transparent;
+      color: #f87171;
+      cursor: pointer;
+    }
+  }
+
+  .inline-form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+
+    input, select {
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    button {
+      padding: 0.35rem 0.75rem;
+      border: none;
+      border-radius: 6px;
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  .error {
+    color: #f87171;
+  }
+
+  .note {
+    color: #64748b;
+    font-size: 0.8rem;
+  }
+}
