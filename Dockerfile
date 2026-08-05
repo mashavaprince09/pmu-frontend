@@ -3,7 +3,11 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# --include=dev: on the deploy server, `npm ci` was silently skipping devDependencies
+# (where @angular/cli lives), causing "ng: not found" — something in that host's
+# environment behaves like NODE_ENV=production even though the base image itself doesn't
+# set it. Force dev deps explicitly rather than depend on ambient config.
+RUN npm ci --include=dev
 
 COPY . .
 RUN npm run build -- --configuration production
