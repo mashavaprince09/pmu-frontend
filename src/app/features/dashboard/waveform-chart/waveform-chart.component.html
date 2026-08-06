@@ -29,7 +29,7 @@
   </div>
 
   @if (loading()) {
-    <p class="status">Loading waveform…</p>
+    <p class="status loading"><span class="spinner"></span> Loading waveform…</p>
   }
   @if (errorMessage()) {
     <p class="status error">{{ errorMessage() }}</p>
@@ -38,15 +38,15 @@
     <p class="status muted">{{ waveformInfo() }}</p>
   }
   @if (!loading() && !errorMessage()) {
-    <p class="status hint">Drag to zoom · +/− to zoom in/out · double-click to reset · zoom is linked between the two charts</p>
+    <p class="status hint">Drag to zoom · +/− to zoom in/out · double-click to reset</p>
   }
 
   <div class="charts">
     <div class="waveform-stack">
       <div class="chart-col">
         <div class="chart-col-header">
-          <span class="chart-label">Voltage (V)</span>
           <div class="channel-toggles">
+            <span class="axis-tag">Voltage (V) — left axis</span>
             @for (ch of voltageChannels; track ch) {
               <label class="channel-toggle" [style.--ch-color]="channelColors[ch]">
                 <input
@@ -57,14 +57,7 @@
                 {{ ch }}
               </label>
             }
-          </div>
-        </div>
-        <div class="chart" #voltageChart></div>
-      </div>
-      <div class="chart-col">
-        <div class="chart-col-header">
-          <span class="chart-label">Current (A)</span>
-          <div class="channel-toggles">
+            <span class="axis-tag">Current (A) — right axis</span>
             @for (ch of currentChannels; track ch) {
               <label class="channel-toggle" [style.--ch-color]="channelColors[ch]">
                 <input
@@ -77,7 +70,7 @@
             }
           </div>
         </div>
-        <div class="chart" #currentChart></div>
+        <div class="chart" #chart></div>
       </div>
     </div>
     <app-phasor-diagram [phasors]="phasors()"></app-phasor-diagram>

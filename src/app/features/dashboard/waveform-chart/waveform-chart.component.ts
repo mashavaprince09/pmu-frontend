@@ -9,10 +9,11 @@ import { PhasorService, Phasor } from '../../../core/dsp/phasor.service';
 import { DashboardStore } from '../../../core/state/dashboard-store';
 import { PhasorDiagramComponent } from '../phasor/phasor-diagram.component';
 
-const WINDOW_OPTIONS = [10, 20, 30];
+const WINDOW_OPTIONS = [10, 20, 30, 60];
 
 const VOLTAGE_LIST: string[] = [...VOLTAGE_CHANNELS];
 const CURRENT_LIST: string[] = [...CURRENT_CHANNELS];
+const ALL_CHANNELS: string[] = [...VOLTAGE_LIST, ...CURRENT_LIST];
 
 @Component({
   selector: 'app-waveform-chart',
@@ -22,8 +23,7 @@ const CURRENT_LIST: string[] = [...CURRENT_CHANNELS];
   styleUrl: './waveform-chart.component.scss'
 })
 export class WaveformChartComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('voltageChart') voltageChartEl!: ElementRef<HTMLDivElement>;
-  @ViewChild('currentChart') currentChartEl!: ElementRef<HTMLDivElement>;
+  @ViewChild('chart') chartEl!: ElementRef<HTMLDivElement>;
 
   readonly windowOptions = WINDOW_OPTIONS;
   readonly voltageChannels = VOLTAGE_LIST;
@@ -35,17 +35,14 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
   readonly errorMessage = signal<string | null>(null);
   readonly phasors = signal<Phasor[]>([]);
   readonly waveformInfo = signal<string | null>(null);
-  readonly enabledChannels = signal<Set<string>>(new Set([...VOLTAGE_LIST, ...CURRENT_LIST]));
+  readonly enabledChannels = signal<Set<string>>(new Set(ALL_CHANNELS));
 
-  private voltagePlot: uPlot | null = null;
-  private currentPlot: uPlot | null = null;
+  private plot: uPlot | null = null;
   private abortController: AbortController | null = null;
   private viewReady = false;
   private lastRawForPhasor: DecodedWaveform | null = null;
   private lastPhasorSampleRateHz = 0;
   private fullXRange: [number, number] | null = null;
-  /** Guards against re-entrant setScale calls while syncing zoom across the two linked charts. */
-  private syncingZoom = false;
 
   constructor(
     private readonly waveform: WaveformService,
@@ -77,8 +74,7 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.abortController?.abort();
-    this.voltagePlot?.destroy();
-    this.currentPlot?.destroy();
+    this.plot?.destroy();
   }
 
   onWindowChange(seconds: string): void {
@@ -101,32 +97,30 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
     const current = new Set(this.enabledChannels());
     if (current.has(channel)) {
       const enabledInGroup = group.filter((ch) => current.has(ch)).length;
-      if (enabledInGroup === 1) return; // keep at least one channel visible per chart
+      if (enabledInGroup === 1) return; // keep at least one channel visible per group
       current.delete(channel);
     } else {
       current.add(channel);
     }
     this.enabledChannels.set(current);
 
-    const seriesIdx = group.indexOf(channel) + 1; // +1: series index 0 is the x scale
-    const plot = isVoltage ? this.voltagePlot : this.currentPlot;
-    plot?.setSeries(seriesIdx, { show: current.has(channel) });
+    const seriesIdx = ALL_CHANNELS.indexOf(channel) + 1; // +1: series index 0 is the x scale
+    this.plot?.setSeries(seriesIdx, { show: current.has(channel) });
 
     this.updatePhasorsForEnabledChannels();
   }
 
-  /** Restores both charts to the full fetched time range (undoes any zoom). */
+  /** Restores the chart to the full fetched time range (undoes any zoom). */
   resetZoom(): void {
     if (!this.fullXRange) return;
-    this.applyZoomToAll(this.fullXRange[0], this.fullXRange[1]);
+    this.applyZoom(this.fullXRange[0], this.fullXRange[1]);
   }
 
-  /** Zooms both charts in/out by `factor` (< 1 zooms in, > 1 zooms out) around the current
-   *  view's center, clamped to the full fetched range so zoom-out can't go past it. */
+  /** Zooms in/out by `factor` (< 1 zooms in, > 1 zooms out) around the current view's center,
+   *  clamped to the full fetched range so zoom-out can't go past it. */
   private zoomBy(factor: number): void {
-    const plot = this.voltagePlot ?? this.currentPlot;
-    if (!plot || !this.fullXRange) return;
-    const { min, max } = plot.scales['x'];
+    if (!this.plot || !this.fullXRange) return;
+    const { min, max } = this.plot.scales['x'];
     if (min == null || max == null) return;
 
     const center = (min + max) / 2;
@@ -134,7 +128,7 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
     const newMin = Math.max(this.fullXRange[0], center - halfSpan);
     const newMax = Math.min(this.fullXRange[1], center + halfSpan);
     if (newMax - newMin < 1e-6) return; // guard against collapsing to a zero-width range
-    this.applyZoomToAll(newMin, newMax);
+    this.applyZoom(newMin, newMax);
   }
 
   zoomIn(): void {
@@ -145,21 +139,14 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
     this.zoomBy(2);
   }
 
-  private applyZoomToAll(min: number, max: number): void {
-    if (this.syncingZoom) return;
-    this.syncingZoom = true;
-    try {
-      this.voltagePlot?.setScale('x', { min, max });
-      this.currentPlot?.setScale('x', { min, max });
-    } finally {
-      this.syncingZoom = false;
-    }
+  private applyZoom(min: number, max: number): void {
+    this.plot?.setScale('x', { min, max });
   }
 
   private updatePhasorsForEnabledChannels(): void {
     if (!this.lastRawForPhasor) return;
     const enabled = this.enabledChannels();
-    const channels = [...VOLTAGE_LIST, ...CURRENT_LIST].filter((ch) => enabled.has(ch));
+    const channels = ALL_CHANNELS.filter((ch) => enabled.has(ch));
     this.phasors.set(
       this.phasor.computePhasors(this.lastRawForPhasor.channels, channels, this.lastPhasorSampleRateHz, this.fundamentalHz())
     );
@@ -190,7 +177,7 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
       ]);
       if (controller.signal.aborted) return;
 
-      this.renderCharts(decoded);
+      this.renderChart(decoded);
 
       this.lastRawForPhasor = rawForPhasor;
       this.lastPhasorSampleRateHz = rawForPhasor.meta.sampleRateHz ?? this.estimateSampleRate(rawForPhasor.t);
@@ -213,10 +200,9 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
     return span > 0 ? (t.length - 1) / span : 0;
   }
 
-  private renderCharts(decoded: DecodedWaveform): void {
-    this.voltagePlot?.destroy();
-    this.currentPlot?.destroy();
-    this.voltagePlot = this.currentPlot = null;
+  private renderChart(decoded: DecodedWaveform): void {
+    this.plot?.destroy();
+    this.plot = null;
 
     const n = decoded.t.length;
     if (n === 0) return;
@@ -225,17 +211,10 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
     this.fullXRange = xRange;
     const tArr = Array.from(decoded.t);
 
-    this.voltagePlot = this.buildChart(this.voltageChartEl.nativeElement, VOLTAGE_LIST, decoded, tArr, xRange);
-    this.currentPlot = this.buildChart(this.currentChartEl.nativeElement, CURRENT_LIST, decoded, tArr, xRange);
+    this.plot = this.buildChart(this.chartEl.nativeElement, decoded, tArr, xRange);
   }
 
-  private buildChart(
-    el: HTMLDivElement,
-    channels: string[],
-    decoded: DecodedWaveform,
-    tArr: number[],
-    xRange: [number, number]
-  ): uPlot {
+  private buildChart(el: HTMLDivElement, decoded: DecodedWaveform, tArr: number[], xRange: [number, number]): uPlot {
     const enabled = this.enabledChannels();
     const width = el.clientWidth || 800;
     const CLICK_THRESHOLD_PX = 5;
@@ -248,8 +227,12 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
     const splinePaths = uPlot.paths.spline?.();
     const series: uPlot.Series[] = [{ value: '{HH}:{mm}:{ss}.{fff}' }];
     const data: (Float64Array | number[])[] = [tArr];
-    for (const ch of channels) {
-      series.push({ label: ch, stroke: this.channelColors[ch], width: 1, show: enabled.has(ch), paths: splinePaths });
+    for (const ch of VOLTAGE_LIST) {
+      series.push({ label: ch, stroke: this.channelColors[ch], width: 1, show: enabled.has(ch), scale: 'v', paths: splinePaths });
+      data.push(decoded.channels[ch] ?? new Float64Array(tArr.length));
+    }
+    for (const ch of CURRENT_LIST) {
+      series.push({ label: ch, stroke: this.channelColors[ch], width: 1, show: enabled.has(ch), scale: 'i', paths: splinePaths });
       data.push(decoded.channels[ch] ?? new Float64Array(tArr.length));
     }
 
@@ -257,11 +240,16 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
       width,
       height: 360,
       series,
-      scales: { x: { time: true } },
-      axes: [{}, {}],
+      scales: { x: { time: true }, v: {}, i: {} },
+      // side: 3 = left, 1 = right. Voltage on the left, current on the right — the two units
+      // share the same time axis but not the same y-range, so they need separate scales.
+      axes: [
+        {},
+        { scale: 'v', side: 3, label: 'Voltage (V)' },
+        { scale: 'i', side: 1, label: 'Current (A)', grid: { show: false } }
+      ],
       legend: { show: false },
-      // setScale: false — we apply the zoom ourselves in the setSelect hook so it can be
-      // synced across both (voltage/current) charts, not just the one dragged on.
+      // setScale: false — we apply the zoom ourselves in the setSelect hook.
       cursor: { drag: { x: true, y: false, setScale: false } },
       hooks: {
         ready: [
@@ -277,7 +265,7 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
             if (u.select.width >= CLICK_THRESHOLD_PX) {
               const min = u.posToVal(u.select.left, 'x');
               const max = u.posToVal(u.select.left + u.select.width, 'x');
-              this.applyZoomToAll(min, max);
+              this.applyZoom(min, max);
             }
             u.setSelect({ left: 0, top: 0, width: 0, height: 0 }, false);
           }
