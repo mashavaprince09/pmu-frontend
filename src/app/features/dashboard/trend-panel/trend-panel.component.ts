@@ -182,7 +182,9 @@ export class TrendPanelComponent implements AfterViewInit, OnDestroy {
     const xRange: [number, number] = [range.fromEpoch, range.toEpoch];
     this.fullXRange = xRange;
 
-    // RMS chart: 6 channels x N devices
+    // RMS chart: 6 channels x N devices. Voltage keys go on the left axis, current keys on
+    // the right — they're different units (V vs A) on very different scales, so sharing one
+    // y-axis would flatten whichever one has the smaller numbers.
     const rmsSeries: uPlot.Series[] = [{}];
     const rmsData: (Float64Array | number[])[] = [tsArr];
     devices.forEach((device, di) => {
@@ -192,12 +194,17 @@ export class TrendPanelComponent implements AfterViewInit, OnDestroy {
           label: `${device} ${key}`,
           stroke: PHASE_COLORS[key],
           width: 1.5,
-          dash: DEVICE_DASH[di % DEVICE_DASH.length]
+          dash: DEVICE_DASH[di % DEVICE_DASH.length],
+          scale: key.startsWith('v') ? 'v' : 'i'
         });
         rmsData.push(m[key as keyof DecodedMetrics] as Float64Array);
       });
     });
-    this.rmsPlot = this.buildChart(this.rmsChartEl.nativeElement, 'RMS (V / A)', rmsSeries, rmsData, xRange);
+    this.rmsPlot = this.buildChart(this.rmsChartEl.nativeElement, 'RMS', rmsSeries, rmsData, xRange, {
+      scales: { x: { time: true }, v: {}, i: {} },
+      // side: 3 = left, 1 = right.
+      axes: [{}, { scale: 'v', side: 3, label: 'Voltage (V)' }, { scale: 'i', side: 1, label: 'Current (A)', grid: { show: false } }]
+    });
 
     // Frequency chart
     const freqSeries: uPlot.Series[] = [{}];
@@ -223,7 +230,8 @@ export class TrendPanelComponent implements AfterViewInit, OnDestroy {
     title: string,
     series: uPlot.Series[],
     data: (Float64Array | number[])[],
-    xRange: [number, number]
+    xRange: [number, number],
+    axisOverride?: { scales: uPlot.Scales; axes: uPlot.Axis[] }
   ): uPlot {
     const width = el.clientWidth || 800;
     const CLICK_THRESHOLD_PX = 5;
@@ -233,8 +241,8 @@ export class TrendPanelComponent implements AfterViewInit, OnDestroy {
       width,
       height: 220,
       series: series.map((s, i) => (i === 0 ? { value: '{HH}:{mm}:{ss}' } : s)),
-      scales: { x: { time: true } },
-      axes: [{}, {}],
+      scales: axisOverride?.scales ?? { x: { time: true } },
+      axes: axisOverride?.axes ?? [{}, {}],
       // setScale: false — we apply the zoom ourselves in the setSelect hook so it can be
       // synced across all three (RMS/frequency/ROCOF) charts, not just the one dragged on.
       cursor: { drag: { x: true, y: false, setScale: false } },
