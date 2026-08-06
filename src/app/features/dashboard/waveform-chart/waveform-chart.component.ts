@@ -11,11 +11,6 @@ import { PhasorDiagramComponent } from '../phasor/phasor-diagram.component';
 
 const WINDOW_OPTIONS = [10, 20, 30];
 
-// Fetch resolution for the waveform charts. 0 = full resolution (no decimation) — start here
-// and dial it down (6000, 12000, 20000, ...) until the sine still looks smooth at the lowest
-// point count, to find the cheapest budget that still renders well.
-const WAVEFORM_MAX_POINTS = 0;
-
 const VOLTAGE_LIST: string[] = [...VOLTAGE_CHANNELS];
 const CURRENT_LIST: string[] = [...CURRENT_CHANNELS];
 
@@ -179,14 +174,18 @@ export class WaveformChartComponent implements AfterViewInit, OnDestroy {
     this.errorMessage.set(null);
 
     try {
-      // Chart display: fetch resolution is WAVEFORM_MAX_POINTS (see top of file) — currently
-      // being trial-and-error'd down from full resolution to find the cheapest point budget
-      // that still renders a smooth sine.
+      // Chart display: LOD-limited fetch matched to the selected window. maxPoints scales with
+      // the window so short windows land close to full resolution, capped at 60,000 to bound
+      // payload/render cost for longer windows. The backend applies min/max envelope
+      // decimation (WaveformService.minMaxEnvelopeIndices) — every bucket's true peak/trough
+      // is kept, so it can't miss real extrema or manufacture aliasing artifacts the way a
+      // naive stride pick can.
       // Phasor FFT: a separate maxPoints=0 fetch, since the display fetch may be decimated
       // and its metadata sampleRateHz reflects the *raw* rate, not the decimated one —
       // using it for FFT bin math against decimated samples would misidentify the fundamental.
+      const maxPoints = Math.min(60_000, Math.max(6_000, windowSeconds * 4_000));
       const [decoded, rawForPhasor] = await Promise.all([
-        this.waveform.fetchWaveform({ device, at, window: windowSeconds, maxPoints: WAVEFORM_MAX_POINTS }, controller.signal),
+        this.waveform.fetchWaveform({ device, at, window: windowSeconds, maxPoints }, controller.signal),
         this.waveform.fetchWaveform({ device, at, window: 1, maxPoints: 0 }, controller.signal)
       ]);
       if (controller.signal.aborted) return;
